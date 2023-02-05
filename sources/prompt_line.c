@@ -38,6 +38,8 @@ size_t prompt_line(FILE *in, FILE *out, const char* prompt, char **const ret) {
     // read(...) is posix non-standard, read(...) and fread(...) do not terminate until eof (ctrl-D)
     // (so the program would hang until eof, no matter how many newlines are entered)
     // despite fgets(...) having confusing and error prone semantics, the only other (worse) choice is fgetc(...)
+    // if an error occurred, the return value of fgets(...) could be NULL, but is indeterminate
+    // (so checking all of !from, ferror(...), and feof(...) is important)
     size_t read_max = size - len;
     char *from = line + len;
     from = fgets(from, read_max + 1, in);
