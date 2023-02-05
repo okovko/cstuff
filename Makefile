@@ -1,9 +1,3 @@
-##
-# Project Title
-#
-# @file
-# @version 0.1
-
 NAME = example
 FILES = prompt_line
 SRCS = $(patsubst %, sources/%.c, $(FILES))
@@ -27,5 +21,3 @@ fclean: clean
 	/bin/rm -f $(NAME)
 
 re: fclean all
-
-# end
