@@ -33,6 +33,11 @@ size_t prompt_line(FILE *in, FILE *out, const char* prompt, char **const ret) {
 
     // read up through (size - len), leaving a byte for '\0'
     // fgets(...) reads one less than its size argument, (read_max + 1) is important
+    // ferror(...) does not distinguish between error and eof, need to check feof(...) too
+    // fgets(...) is used because:
+    // read(...) is posix non-standard, read(...) and fread(...) do not terminate until eof (ctrl-D)
+    // (so the program would hang until eof, no matter how many newlines are entered)
+    // despite fgets(...) having confusing and error prone semantics, the only other (worse) choice is fgetc(...)
     size_t read_max = size - len;
     char *from = line + len;
     from = fgets(from, read_max + 1, in);
@@ -40,11 +45,11 @@ size_t prompt_line(FILE *in, FILE *out, const char* prompt, char **const ret) {
 
     // search for '\n' up through read_max
     // last is null, or last > from
+    // read_count <= read_max
     char *const last = memchr(from, '\n', read_max);
     size_t read_count = last ? (size_t)(last - from) : read_max;
     len += read_count;
 
-    // read_count <= read_max
     // if done reading, zero the remaining bytes (at least one)
     // otherwise, double the allocation for the next iteration, up to the limit
     if (last) {
