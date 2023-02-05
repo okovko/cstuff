@@ -3,9 +3,9 @@
 
 // for ptrdiff_t, size_t
 #include <stddef.h>
-// for printf, stdin, stdout
+// for fprintf, stdin, stdout, FILE, ferror, feof, fgets
 #include <stdio.h>
-// for realloc, free, FILE, ferror, feof, fread
+// for realloc, free
 #include <stdlib.h>
 // for memchr, memset
 #include <string.h>
@@ -14,45 +14,55 @@
 
 // similar to posix getline
 size_t prompt_line(FILE *in, FILE *out, const char* prompt, char **const ret) {
+  // the loop logic depends on these specific init values
   size_t size = PROMPT_LINE_MIN_SIZE;
   size_t len = 0;
-
   char *line = NULL;
 
+  // print the prompt, if possible
   if (out && !ferror(out) && prompt) {
     fprintf(out, "%s", prompt);
   }
 
   while (true) {
-    // realloc(..., 0) is undefined
+    // preallocate buffer to read into
+    // when passed NULL, realloc is identical to malloc
+    // realloc(..., 0) is undefined, (size + 1) is important
     line = realloc(line, size + 1);
     if (!line) break;
 
-    // read up to size
+    // read up through (size - len), leaving a byte for '\0'
+    // fgets(...) reads one less than its size argument, (read_max + 1) is important
     size_t read_max = size - len;
     char *from = line + len;
     from = fgets(from, read_max + 1, in);
     if (!from || (ferror(in) && !feof(in))) break;
 
-    // search for '\n' up to read_max
-    char *const last = memchr(from, '\n', read_max);
+    // search for '\n' up through read_max
     // last is null, or last > from
+    char *const last = memchr(from, '\n', read_max);
     size_t read_count = last ? (size_t)(last - from) : read_max;
     len += read_count;
+
+    // read_count <= read_max
+    // if done reading, zero the remaining bytes (at least one)
+    // otherwise, double the allocation for the next iteration, up to the limit
     if (last) {
-      // read_count <= read_max
-      // zero the remaining bytes (at least one)
+      // this return path is for the success case
       memset(last, '\0', read_max - read_count + 1);
       *ret = line;
       return len;
     } else {
-      // double the allocation for the next iteration, up to the limit
       size = (size < PROMPT_LINE_MAX_SIZE ? size * 2 : PROMPT_LINE_MAX_SIZE);
     }
   }
+
+  // deallocate if breaking out of loop due to error
   if (line) {
     free(line);
   }
+
+  // this return path is for the error case
   *ret = NULL;
   return 0;
 }
