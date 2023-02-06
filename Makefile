@@ -12,7 +12,7 @@ FLAGS = -g -Wall -Wextra -Werror
 all: $(NAME)
 
 $(NAME): $(BINS)
-	gcc -Iincludes $(FLAGS) $(LIBFT) $(BINS) main.c -o $(NAME)
+	gcc -Iincludes $(FLAGS) $(BINS) main.c -o $(NAME)
 
 clean:
 	/bin/rm -f $(BINS)
